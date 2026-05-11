@@ -172,12 +172,12 @@ class UIRequestHandler(BaseHTTPRequestHandler):
 
 def serve(host: str = "127.0.0.1", port: int = 8765) -> None:
     httpd = ThreadingHTTPServer((host, port), UIRequestHandler)
-    print(f"LangGraph Agent Lab UI: http://{host}:{port}")
+    print(f"LangGraph Agent UI: http://{host}:{port}")
     httpd.serve_forever()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the local LangGraph Agent Lab UI.")
+    parser = argparse.ArgumentParser(description="Run the LangGraph Agent Lab UI.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8765, type=int)
     args = parser.parse_args()
