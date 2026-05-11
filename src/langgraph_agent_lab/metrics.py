@@ -34,17 +34,35 @@ class MetricsReport(BaseModel):
     scenario_metrics: list[ScenarioMetric]
 
 
-def metric_from_state(state: dict[str, Any], expected_route: str, approval_required: bool) -> ScenarioMetric:
-    events = state.get("events", []) or []
+def _current_run_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return events from the latest intake onward.
+
+    Durable checkpoints can contain prior runs with the same thread id. Metrics should describe
+    the current scenario execution, not the entire persisted thread history.
+    """
+    for index in range(len(events) - 1, -1, -1):
+        if events[index].get("node") == "intake":
+            return events[index:]
+    return events
+
+
+def metric_from_state(
+    state: dict[str, Any],
+    expected_route: str,
+    approval_required: bool,
+) -> ScenarioMetric:
+    events = _current_run_events(state.get("events", []) or [])
     errors = state.get("errors", []) or []
     actual_route = state.get("route")
     approval = state.get("approval")
     nodes = [event.get("node", "unknown") for event in events]
     retry_count = sum(1 for node in nodes if node == "retry")
     interrupt_count = sum(1 for node in nodes if node == "approval")
-    success = actual_route == expected_route and bool(state.get("final_answer") or state.get("pending_question"))
+    output_observed = bool(state.get("final_answer") or state.get("pending_question"))
+    approval_observed = "approval" in nodes and approval is not None
+    success = actual_route == expected_route and output_observed
     if approval_required:
-        success = success and approval is not None
+        success = success and approval_observed
     return ScenarioMetric(
         scenario_id=str(state.get("scenario_id", "unknown")),
         success=success,
@@ -54,8 +72,9 @@ def metric_from_state(state: dict[str, Any], expected_route: str, approval_requi
         retry_count=retry_count,
         interrupt_count=interrupt_count,
         approval_required=approval_required,
-        approval_observed=approval is not None,
-        errors=list(errors),
+        approval_observed=approval_observed,
+        latency_ms=sum(int(event.get("latency_ms", 0)) for event in events),
+        errors=list(errors)[-retry_count:] if retry_count else [],
     )
 
 
@@ -76,4 +95,7 @@ def summarize_metrics(items: list[ScenarioMetric]) -> MetricsReport:
 def write_metrics(report: MetricsReport, output_path: str | Path) -> None:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report.model_dump(), indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(report.model_dump(), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )

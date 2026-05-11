@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import SupportsInt
+
 from .state import AgentState, Route
 
 CLASSIFY_ROUTE_MAP = {
@@ -13,7 +15,7 @@ CLASSIFY_ROUTE_MAP = {
 }
 
 
-def _coerce_non_negative_int(value: object, default: int) -> int:
+def _coerce_non_negative_int(value: SupportsInt | str | bytes | bytearray, default: int) -> int:
     try:
         return max(0, int(value))
     except (TypeError, ValueError):

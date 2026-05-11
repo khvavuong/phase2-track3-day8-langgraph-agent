@@ -11,7 +11,6 @@ import re
 
 from .state import AgentState, ApprovalDecision, Route, make_event
 
-
 RISKY_KEYWORDS = frozenset({"refund", "delete", "send", "cancel", "remove", "revoke"})
 TOOL_KEYWORDS = frozenset({"status", "order", "lookup", "check", "track", "find", "search"})
 ERROR_KEYWORDS = frozenset({"timeout", "fail", "failure", "error", "crash", "unavailable"})
