@@ -161,7 +161,10 @@ def approval_node(state: AgentState) -> dict:
 
     Mock approval keeps CI deterministic; LANGGRAPH_INTERRUPT=true enables a real HITL demo.
     """
-    if os.getenv("LANGGRAPH_INTERRUPT", "").lower() == "true":
+    existing_approval = state.get("approval")
+    if isinstance(existing_approval, dict):
+        decision = ApprovalDecision(**existing_approval)
+    elif os.getenv("LANGGRAPH_INTERRUPT", "").lower() == "true":
         from langgraph.types import interrupt
 
         value = interrupt({

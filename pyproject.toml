@@ -28,6 +28,7 @@ postgres = ["langgraph-checkpoint-postgres>=2.0"]
 
 [project.scripts]
 agent-lab = "langgraph_agent_lab.cli:app"
+agent-lab-ui = "langgraph_agent_lab.ui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
